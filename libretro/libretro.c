@@ -137,6 +137,7 @@ static uint8_t brm_format[0x40] =
   0x53,0x45,0x47,0x41,0x5f,0x43,0x44,0x5f,0x52,0x4f,0x4d,0x00,0x01,0x00,0x00,0x00,
   0x52,0x41,0x4d,0x5f,0x43,0x41,0x52,0x54,0x52,0x49,0x44,0x47,0x45,0x5f,0x5f,0x5f
 };
+uint8_t cart_size;
 
 static bool is_running = 0;
 static uint8_t temp[0x10000];
@@ -197,8 +198,8 @@ static bool libretro_supports_bitmasks          = false;
 
 #define SOUND_FREQUENCY 44100
 
-/* Hide the EQ settings for now */
-/*#define HAVE_EQ*/
+/*EQ settings*/
+#define HAVE_EQ
 
 /* Frameskipping Support */
 
@@ -1327,25 +1328,127 @@ static void check_variables(bool first_run)
   bool update_frameskip     = false;
   struct retro_variable var = {0};
 
-  var.key = "genesis_plus_gx_bram";
-  environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var);
+  if (first_run)
   {
-   if (!var.value || !strcmp(var.value, "per bios"))
-   {
-     fill_pathname_join(CD_BRAM_EU, save_dir, "scd_E.brm", sizeof(CD_BRAM_EU));
-     fill_pathname_join(CD_BRAM_US, save_dir, "scd_U.brm", sizeof(CD_BRAM_US));
-     fill_pathname_join(CD_BRAM_JP, save_dir, "scd_J.brm", sizeof(CD_BRAM_JP));
-   }
-   else
-   {
-     char newpath[4096];
-     fill_pathname_join(newpath, save_dir, g_rom_name, sizeof(newpath));
-     strlcat(newpath, ".brm", sizeof(newpath));
-     strlcpy(CD_BRAM_EU, newpath, sizeof(CD_BRAM_EU));
-     strlcpy(CD_BRAM_US, newpath, sizeof(CD_BRAM_US));
-     strlcpy(CD_BRAM_JP, newpath, sizeof(CD_BRAM_JP));
-   }
+    var.key = "genesis_plus_gx_system_bram";
+    environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var);
+    {
+      if (!var.value || !strcmp(var.value, "per bios"))
+      {
+        fill_pathname_join(CD_BRAM_EU, save_dir, "scd_E.brm", sizeof(CD_BRAM_EU));
+        fill_pathname_join(CD_BRAM_US, save_dir, "scd_U.brm", sizeof(CD_BRAM_US));
+        fill_pathname_join(CD_BRAM_JP, save_dir, "scd_J.brm", sizeof(CD_BRAM_JP));
+      }
+      else
+      {
+        char newpath[4096];
+        fill_pathname_join(newpath, save_dir, g_rom_name, sizeof(newpath));
+        strlcat(newpath, ".brm", sizeof(newpath));
+        strlcpy(CD_BRAM_EU, newpath, sizeof(CD_BRAM_EU));
+        strlcpy(CD_BRAM_US, newpath, sizeof(CD_BRAM_US));
+        strlcpy(CD_BRAM_JP, newpath, sizeof(CD_BRAM_JP));
+      }
+    }
   }
+
+  if (first_run)
+  {
+    var.key = "genesis_plus_gx_cart_size";
+    environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var);
+    {
+      if (var.value && !strcmp(var.value, "disabled"))
+        cart_size = 0xff;
+      else if (var.value && !strcmp(var.value, "128k"))
+        cart_size = 1;
+      else if (var.value && !strcmp(var.value, "256k"))
+        cart_size = 2;
+      else if (var.value && !strcmp(var.value, "512k"))
+        cart_size = 3;
+      else if (var.value && !strcmp(var.value, "1meg"))
+        cart_size = 4;
+      else if (var.value && !strcmp(var.value, "2meg"))
+        cart_size = 5;
+      else if (var.value && !strcmp(var.value, "4meg"))
+        cart_size = 6;
+    }
+  }
+
+  if (first_run)
+  {
+    var.key = "genesis_plus_gx_cart_bram";
+    environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var);
+    {
+      if ((!var.value || !strcmp(var.value, "per cart")) && cart_size == 1)
+         {
+           fill_pathname_join(CART_BRAM, save_dir, "128Kbit_cart.brm", sizeof(CART_BRAM));
+         }
+      else if ((!var.value || !strcmp(var.value, "per cart")) && cart_size == 2)
+         {
+           fill_pathname_join(CART_BRAM, save_dir, "256Kbit_cart.brm", sizeof(CART_BRAM));
+         }
+      else if ((!var.value || !strcmp(var.value, "per cart")) && cart_size == 3)
+         {
+           fill_pathname_join(CART_BRAM, save_dir, "512Kbit_cart.brm", sizeof(CART_BRAM));
+         }
+      else if ((!var.value || !strcmp(var.value, "per cart")) && cart_size == 4)
+         {
+           fill_pathname_join(CART_BRAM, save_dir, "1Mbit_cart.brm", sizeof(CART_BRAM));
+         }
+      else if ((!var.value || !strcmp(var.value, "per cart")) && cart_size == 5)
+         {
+           fill_pathname_join(CART_BRAM, save_dir, "2Mbit_cart.brm", sizeof(CART_BRAM));
+         }
+      else if ((!var.value || !strcmp(var.value, "per cart")) && cart_size == 6)
+         {
+           fill_pathname_join(CART_BRAM, save_dir, "4Mbit_cart.brm", sizeof(CART_BRAM));
+         }
+      else
+      {
+      if (cart_size == 1)
+         { 
+           char newpath[4096];
+           fill_pathname_join(newpath, save_dir, g_rom_name, sizeof(newpath));
+           strlcat(newpath, "_128Kbit_cart.brm", sizeof(newpath));
+           strlcpy(CART_BRAM, newpath, sizeof(CART_BRAM));
+         }
+      else if (cart_size == 2)
+         { 
+           char newpath[4096];
+           fill_pathname_join(newpath, save_dir, g_rom_name, sizeof(newpath));
+           strlcat(newpath, "_256Kbit_cart.brm", sizeof(newpath));
+           strlcpy(CART_BRAM, newpath, sizeof(CART_BRAM));
+         }
+      else if (cart_size == 3)
+         { 
+           char newpath[4096];
+           fill_pathname_join(newpath, save_dir, g_rom_name, sizeof(newpath));
+           strlcat(newpath, "_512Kbit_cart.brm", sizeof(newpath));
+           strlcpy(CART_BRAM, newpath, sizeof(CART_BRAM));
+         }
+      else if (cart_size == 4)
+         { 
+           char newpath[4096];
+           fill_pathname_join(newpath, save_dir, g_rom_name, sizeof(newpath));
+           strlcat(newpath, "_1Mbit_cart.brm", sizeof(newpath));
+           strlcpy(CART_BRAM, newpath, sizeof(CART_BRAM));
+         }
+      else if (cart_size == 5)
+         { 
+           char newpath[4096];
+           fill_pathname_join(newpath, save_dir, g_rom_name, sizeof(newpath));
+           strlcat(newpath, "_2Mbit_cart.brm", sizeof(newpath));
+           strlcpy(CART_BRAM, newpath, sizeof(CART_BRAM));
+         }
+      else if (cart_size == 6)
+         { 
+           char newpath[4096];
+           fill_pathname_join(newpath, save_dir, g_rom_name, sizeof(newpath));
+           strlcat(newpath, "_4Mbit_cart.brm", sizeof(newpath));
+           strlcpy(CART_BRAM, newpath, sizeof(CART_BRAM));
+         }
+      }
+     }
+   }
 
   var.key = "genesis_plus_gx_system_hw";
   environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var);
@@ -1355,6 +1458,8 @@ static void check_variables(bool first_run)
       config.system = SYSTEM_SG;
     else if (var.value && !strcmp(var.value, "sg-1000 II"))
       config.system = SYSTEM_SGII;
+    else if (var.value && !strcmp(var.value, "sg-1000 II + ram ext."))
+      config.system = SYSTEM_SGII_RAM_EXT;
     else if (var.value && !strcmp(var.value, "mark-III"))
       config.system = SYSTEM_MARKIII;
     else if (var.value && !strcmp(var.value, "master system"))
@@ -1651,7 +1756,7 @@ static void check_variables(bool first_run)
     if (var.value && !strcmp(var.value, "low-pass"))
       config.filter = 1;
 
-#if HAVE_EQ 
+#ifdef HAVE_EQ 
     else if (var.value && !strcmp(var.value, "EQ"))
       config.filter = 2;
 #endif
@@ -1666,7 +1771,7 @@ static void check_variables(bool first_run)
     config.lp_range = (!var.value) ? 0x9999 : ((atoi(var.value) * 65536) / 100);
   }
 
-#if HAVE_EQ
+#ifdef HAVE_EQ
   var.key = "genesis_plus_gx_audio_eq_low";
   environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var);
   {
@@ -1907,16 +2012,7 @@ static void check_variables(bool first_run)
   var.key = "genesis_plus_gx_overclock";
   environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var);
   {
-    if (!var.value || !strcmp(var.value, "100%"))
-      config.overclock = 100;
-    else if (var.value && !strcmp(var.value, "125%"))
-      config.overclock = 125;
-    else if (var.value && !strcmp(var.value, "150%"))
-      config.overclock = 150;
-    else if (var.value && !strcmp(var.value, "175%"))
-      config.overclock = 175;
-    else if (var.value && !strcmp(var.value, "200%"))
-      config.overclock = 200;
+    config.overclock = (!var.value) ? 100 : atoi(var.value);
 
     if (system_hw)
       update_overclock();
@@ -2310,7 +2406,33 @@ static void apply_cheats(void)
    {
       if (cheatlist[i].enable)
       {
-         if (cheatlist[i].address < cart.romsize)
+         /* detect Work RAM patch */
+         if (cheatlist[i].address >= 0xFF0000)
+         {
+            /* add RAM patch */
+            cheatIndexes[maxRAMcheats++] = i;
+         }
+
+         /* check if Mega-CD game is running */
+         else if ((system_hw == SYSTEM_MCD) && !scd.cartridge.boot)
+         {
+            /* detect PRG-RAM patch (Sub-CPU side) */
+            if (cheatlist[i].address < 0x80000)
+            {
+               /* add RAM patch */
+               cheatIndexes[maxRAMcheats++] = i;
+            }
+
+            /* detect Word-RAM patch (Main-CPU side)*/
+            else if ((cheatlist[i].address >= 0x200000) && (cheatlist[i].address < 0x240000))
+            {
+               /* add RAM patch */
+              cheatIndexes[maxRAMcheats++] = i;
+            }
+         }
+
+         /* detect cartridge ROM patch */
+         else if (cheatlist[i].address < cart.romsize)
          {
             if ((system_hw & SYSTEM_PBC) == SYSTEM_MD)
             {
@@ -2340,19 +2462,20 @@ static void apply_cheats(void)
                }
             }
          }
-         else if (cheatlist[i].address >= 0xFF0000)
-         {
-            /* add RAM patch */
-            cheatIndexes[maxRAMcheats++] = i;
-         }
       }
    }
 }
 
 static void clear_cheats(void)
 {
-   int i = maxcheats;
-   /* disable cheats in reversed order in case the same address is used by multiple patches */
+   int i;
+
+  /* no ROM patches with Mega-CD games */
+   if ((system_hw == SYSTEM_MCD) && !scd.cartridge.boot)
+      return;
+
+   /* disable cheats in reversed order in case the same address is used by multiple ROM patches */
+   i = maxcheats;
    while (i > 0)
    {
       if (cheatlist[i-1].enable)
@@ -2389,21 +2512,45 @@ static void clear_cheats(void)
 ****************************************************************************/
 static void RAMCheatUpdate(void)
 {
+   uint8_t *base;
+   uint32_t mask;
    int index, cnt = maxRAMcheats;
+
    while (cnt)
    {
       /* get cheat index */
       index = cheatIndexes[--cnt];
+
+      /* detect destination RAM */
+      switch ((cheatlist[index].address >> 20) & 0xf)
+      {
+         case 0x0: /* Mega-CD PRG-RAM (512 KB) */
+            base = scd.prg_ram;
+            mask = 0x7fffe;
+            break;
+
+         case 0x2: /* Mega-CD 2M Word-RAM (256 KB) */
+            base = scd.word_ram_2M;
+            mask = 0x3fffe;
+            break;
+
+         default: /* Work-RAM (64 KB) */
+            base = work_ram;
+            mask = 0xfffe;
+            break;
+      }
+
       /* apply RAM patch */
       if (cheatlist[index].data & 0xFF00)
       {
-         /* 16-bit patch */
-         *(uint16_t *)(work_ram + (cheatlist[index].address & 0xFFFE)) = cheatlist[index].data;
+         /* word patch */
+         *(uint16_t *)(base + (cheatlist[index].address & mask)) = cheatlist[index].data;
       }
       else
       {
-         /* 8-bit patch */
-         work_ram[cheatlist[index].address & 0xFFFF] = cheatlist[index].data;
+          /* byte patch */
+          mask |= 1;
+          base[cheatlist[index].address & mask] = cheatlist[index].data;
       }
    }
 }
@@ -2452,7 +2599,7 @@ void ROMCheatUpdate(void)
   }
 }
 
-static void set_memory_maps()
+static void set_memory_maps(void)
 {
    if (system_hw == SYSTEM_MCD)
    {
@@ -2776,7 +2923,7 @@ void retro_set_environment(retro_environment_t cb)
 
    static const struct retro_system_content_info_override content_overrides[] = {
       {
-         "mdx|md|smd|gen|bms|sms|gg|sg|68k|sgd", /* extensions */
+         "mdx|md|bin|smd|gen|bms|sms|gg|sg|68k|sgd", /* extensions */
 #if defined(LOW_MEMORY)
          true,                                   /* need_fullpath */
 #else
@@ -2817,7 +2964,7 @@ void retro_set_environment(retro_environment_t cb)
    cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, (void*)desc);
    cb(RETRO_ENVIRONMENT_SET_CONTENT_INFO_OVERRIDE, (void*)content_overrides);
 
-   vfs_iface_info.required_interface_version = 1;
+   vfs_iface_info.required_interface_version = 2;
    vfs_iface_info.iface                      = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_iface_info))
 	   filestream_vfs_init(&vfs_iface_info);
@@ -3132,6 +3279,7 @@ bool retro_load_game(const struct retro_game_info *info)
    content_path[0] = '\0';
    content_ext[0]  = '\0';
 
+   system_hw       = 0;
    g_rom_data      = NULL;
    g_rom_size      = 0;
 
@@ -3230,8 +3378,7 @@ bool retro_load_game(const struct retro_game_info *info)
    fill_pathname_join(CD_BIOS_EU, dir, "bios_CD_E.bin", sizeof(CD_BIOS_EU));
    fill_pathname_join(CD_BIOS_US, dir, "bios_CD_U.bin", sizeof(CD_BIOS_US));
    fill_pathname_join(CD_BIOS_JP, dir, "bios_CD_J.bin", sizeof(CD_BIOS_JP));
-   fill_pathname_join(CART_BRAM,  dir, "cart.brm",      sizeof(CART_BRAM));
-
+ 
    check_variables(true);
 
    if (log_cb)
@@ -3396,11 +3543,13 @@ bool retro_load_game(const struct retro_game_info *info)
 error:
    if (sms_ntsc)
       free(sms_ntsc);
-   sms_ntsc = NULL;
+   sms_ntsc  = NULL;
 
    if (md_ntsc)
       free(md_ntsc);
-   md_ntsc = NULL;
+   md_ntsc   = NULL;
+
+   system_hw = 0;
 
    return false;
 }
@@ -3435,11 +3584,12 @@ void retro_unload_game(void)
 
    if (md_ntsc)
       free(md_ntsc);
-   md_ntsc = NULL;
-
+   md_ntsc   = NULL;
    if (sms_ntsc)
       free(sms_ntsc);
-   sms_ntsc = NULL;
+   sms_ntsc  = NULL;
+
+   system_hw = 0;
 }
 
 unsigned retro_get_region(void) { return vdp_pal ? RETRO_REGION_PAL : RETRO_REGION_NTSC; }
@@ -3465,35 +3615,46 @@ size_t retro_get_memory_size(unsigned id)
    {
       case RETRO_MEMORY_SAVE_RAM:
       {
-        if (!sram.on)
-          return 0;
+         /* return 0 if SRAM is disabled */
+         if (!sram.on)
+            return 0;
 
-        /* if emulation is not running, we assume the frontend is requesting SRAM size for loading */
-        if (!is_running)
-        {
-          /* max supported size is returned */
-          return 0x10000;
-        }
-
-        /* otherwise, we assume this is for saving and we need to check if SRAM data has been modified */
-        /* this is obviously not %100 safe since the frontend could still be trying to load SRAM while emulation is running */
-        /* a better solution would be that the frontend itself checks if data has been modified before writing it to a file */
-        for (i=0xffff; i>=0; i--)
-        {
-          if (sram.sram[i] != 0xff)
-          {
-            /* only save modified size */
-            return (i+1);
-          }
-        }
-      }
-      case RETRO_MEMORY_SYSTEM_RAM:
-         if (system_hw == SYSTEM_SMS || system_hw == SYSTEM_SMS2 || system_hw == SYSTEM_GG || system_hw == SYSTEM_GGMS)
-            return 0x02000;
-         else
+         /* if emulation is not running, we assume the frontend is requesting SRAM size for loading so max supported size is returned */
+         if (!is_running)
             return 0x10000;
-      default:
+
+         /* otherwise, we assume this is for saving and we return the size of SRAM data that has actually been modified */
+         /* this is obviously not %100 safe since the frontend could still be trying to load SRAM while emulation is running */
+         /* a better solution would be that the frontend itself checks if data has been modified before writing it to a file */
+         for (i=0xffff; i>=0; i--)
+            if (sram.sram[i] != 0xff)
+               return (i+1);
+
+         /* return 0 if SRAM is not modified */
          return 0;
+      }
+
+      case RETRO_MEMORY_SYSTEM_RAM:
+      {
+         /* 16-bit hardware */
+         if ((system_hw & SYSTEM_PBC) == SYSTEM_MD)
+            return 0x10000; /* 64KB internal RAM */
+
+         /* get 8-bit cartrige on-board RAM size */
+         i = sms_cart_ram_size();
+
+         if (i > 0)
+            return i + 0x2000; /* on-board RAM size + max 8KB internal RAM */
+         else if (system_hw == SYSTEM_SGII)
+            return 0x0800; /* 2KB internal RAM */
+         else if (system_hw == SYSTEM_SG)
+            return 0x0400; /* 1KB internal RAM */
+         else
+            return 0x2000; /* 8KB internal RAM */
+      }
+
+      default:
+        return 0;
    }
 }
 

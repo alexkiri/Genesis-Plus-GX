@@ -42,6 +42,7 @@ extern "C" {
 
 #if defined(M68K_OVERCLOCK_SHIFT) || defined(Z80_OVERCLOCK_SHIFT)
 #define HAVE_OVERCLOCK
+#define HAVE_EQ
 #endif
 
 /*
@@ -102,14 +103,15 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       NULL,
       "system",
       {
-         { "auto",                 "Auto"               },
-         { "sg-1000",              "SG-1000"            },
-         { "sg-1000 II",           "SG-1000 II"         },
-         { "mark-III",             "Mark III"           },
-         { "master system",        "Master System"      },
-         { "master system II",     "Master System II"   },
-         { "game gear",            "Game Gear"          },
-         { "mega drive / genesis", "Mega Drive/Genesis" },
+         { "auto",                 "Auto"                 },
+         { "sg-1000",              "SG-1000"              },
+         { "sg-1000 II",           "SG-1000 II"           },
+         { "sg-1000 II + ram ext.","SG-1000 II + RAM Ext."},
+         { "mark-III",             "Mark III"             },
+         { "master system",        "Master System"        },
+         { "master system II",     "Master System II"     },
+         { "game gear",            "Game Gear"            },
+         { "mega drive / genesis", "Mega Drive/Genesis"   },
          { NULL, NULL },
       },
       "auto"
@@ -145,8 +147,8 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       "disabled"
    },
    {
-      "genesis_plus_gx_bram",
-      "CD System BRAM",
+      "genesis_plus_gx_system_bram",
+      "CD System BRAM (Requires Restart)",
       NULL,
       "When running Sega CD/Mega-CD content, specifies whether to share a single save file between all games from a specific region (Per-BIOS) or to create a separate save file for each game (Per-Game). Note that the Sega CD/Mega-CD has limited internal storage, sufficient only for a handful of titles. To avoid running out of space, the 'Per-Game' setting is recommended.",
       NULL,
@@ -157,6 +159,39 @@ struct retro_core_option_v2_definition option_defs_us[] = {
          { NULL, NULL },
       },
       "per bios"
+   },
+   {
+      "genesis_plus_gx_cart_bram",
+      "CD Backup Cart BRAM (Requires Restart)",
+      NULL,
+      "When running Sega CD/Mega-CD content, specifies whether to share a single backup ram cart for all games (Per-Cart) or to create a separate backup ram cart for each game (Per-Game).",
+      NULL,
+      "system",
+      {
+         { "per cart", "Per-Cart" },
+         { "per game", "Per-Game" },
+         { NULL, NULL },
+      },
+      "per cart"
+   },
+   {
+      "genesis_plus_gx_cart_size",
+      "CD Backup Cart BRAM Size (Requires Restart)",
+      NULL,
+      "Sets the backup ram cart size when running Sega CD/Mega-CD content. Useful when setting the backup ram cart to Per-Game to avoid multiple larger cart sizes.",
+      NULL,
+      "system",
+      {
+         { "disabled", "Disabled" },
+         { "128k",     "128Kbit"  },
+         { "256k",     "256Kbit"  },
+         { "512k",     "512Kbit"  },
+         { "1meg",     "1Mbit"    },
+         { "2meg",     "2Mbit"    },
+         { "4meg",     "4Mbit"    },
+         { NULL, NULL },
+      },
+      "4meg"
    },
    {
       "genesis_plus_gx_add_on",
@@ -417,7 +452,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       {
          { "disabled", NULL },
          { "low-pass", "Low-Pass" },
-#if HAVE_EQ
+#ifdef HAVE_EQ
          { "EQ",       NULL },
 #endif
          { NULL, NULL },
@@ -786,7 +821,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
    },
    {
       "genesis_plus_gx_enhanced_vscroll",
-      "Enchanced per-tile vertical scroll",
+      "Enhanced per-tile vertical scroll",
       NULL,
       "Allows each individual cell to be scrolled vertically, instead of 16px 2-cell, by averaging out with the vscroll value of the neighbouring cell. This hack only applies to few games that use 2-cell vertical scroll mode.",
       NULL,
@@ -800,9 +835,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
    },
    {
       "genesis_plus_gx_enhanced_vscroll_limit",
-      "Enchanced per-tile vertical scroll limit",
+      "Enhanced per-tile vertical scroll limit",
       NULL,
-      "Only when Enchance per-tile vertical scroll is enabled. Adjusts the limit of the vertical scroll enhancement. When the vscroll difference between neighbouring tiles is bigger than this limit, the enhancement is disabled.",
+      "Only when Enhanced per-tile vertical scroll is enabled. Adjusts the limit of the vertical scroll enhancement. When the vscroll difference between neighbouring tiles is bigger than this limit, the enhancement is disabled.",
       NULL,
       "hacks",
       {
@@ -834,11 +869,23 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       NULL,
       "hacks",
       {
-         { "100%", NULL },
-         { "125%", NULL },
-         { "150%", NULL },
-         { "175%", NULL },
-         { "200%", NULL },
+         { "100", "100%" },
+         { "125", "125%" },
+         { "150", "150%" },
+         { "175", "175%" },
+         { "200", "200%" },
+         { "225", "225%" },
+         { "250", "250%" },
+         { "275", "275%" },
+         { "300", "300%" },
+         { "325", "325%" },
+         { "350", "350%" },
+         { "375", "375%" },
+         { "400", "400%" },
+         { "425", "425%" },
+         { "450", "450%" },
+         { "475", "475%" },
+         { "500", "500%" },
          { NULL, NULL },
       },
       "100%"
@@ -1382,6 +1429,11 @@ struct retro_core_options_v2 *options_intl[RETRO_LANGUAGE_LAST] = {
    &options_id,      /* RETRO_LANGUAGE_INDONESIAN */
    &options_sv,      /* RETRO_LANGUAGE_SWEDISH */
    &options_uk,      /* RETRO_LANGUAGE_UKRAINIAN */
+   &options_cs,      /* RETRO_LANGUAGE_CZECH */
+   &options_val,     /* RETRO_LANGUAGE_CATALAN_VALENCIA */
+   &options_ca,      /* RETRO_LANGUAGE_CATALAN */
+   &options_en,      /* RETRO_LANGUAGE_BRITISH_ENGLISH */
+   &options_hu,      /* RETRO_LANGUAGE_HUNGARIAN */
 };
 #endif
 
